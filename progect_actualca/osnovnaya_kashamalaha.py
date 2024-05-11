@@ -1,22 +1,24 @@
-
 import os
 from math import hypot
 from telebot import types
 import cv2
 
 
-
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+chickesn_ori = cv2.imread('ch.png')
 specs_ori = cv2.imread('glass.png')
 clown_ori = cv2.imread('clown.png')
 pig_ori = cv2.imread('pig.png')
-chicken_ori = cv2.imread('chicken.jpg')
+
 
 selected_mask_type = None
+
 
 def apply_mask_to_video(mask_type):
     global selected_mask_type
     selected_mask_type = mask_type
+
+
 def apply_mask():
     video_capture = cv2.VideoCapture('user_video.mp4')
 
@@ -76,7 +78,7 @@ def apply_mask():
                     face_sh = face_symax - face_symin
 
                     face_roi_color = frame[face_symin:face_symax, x:x + w]
-                    chicken = cv2.resize(chicken_ori, (w, face_sh), interpolation=cv2.INTER_CUBIC)
+                    chicken = cv2.resize(chickesn_ori, (w, face_sh), interpolation=cv2.INTER_CUBIC)
                     chicken_gray = cv2.cvtColor(chicken, cv2.COLOR_BGR2GRAY)
                     _, mask = cv2.threshold(chicken_gray, 25, 255, cv2.THRESH_BINARY_INV)
 
@@ -86,7 +88,6 @@ def apply_mask():
                     frame[face_symin:face_symax, x:x + w] = res
 
                 elif selected_mask_type == 'pig':
-                    # Pig mask position on the full face
                     face_symin = int(y - 0.5 * h / 5)
                     face_symax = int(y + 1.5 * h / 5)
                     face_sh = face_symax - face_symin
@@ -107,6 +108,7 @@ def apply_mask():
     video_writer.release()
     cv2.destroyAllWindows()
 
+
 import webbrowser
 import telebot
 from db import *
@@ -114,12 +116,12 @@ from telebot import types
 import os
 import time
 
-
 bot = telebot.TeleBot('7142673061:AAHwNCi3xPUswzUxt1_S3b0ZuNVC8ml4tvI')
+
 
 @bot.message_handler(commands=['start'])
 def starart_bot(message):
-    first_message = f"<b>{message.from_user.first_name} </b>, привет!\nХочешь попробовать маски на видео в Telegram? \nТогда введи команду из предложенных и отправь видео: /clown , /glass , /pig , /chicken"
+    first_message = f"<b>{message.from_user.first_name} </b>, привет!\nХочешь попробовать маски на видео в Telegram? \nТогда введи команду из предложенных и отправь видео"
     markup = types.InlineKeyboardMarkup()
     button_clown = types.InlineKeyboardButton(text='Маска клоуна', callback_data='clown')
     button_glass = types.InlineKeyboardButton(text='Маска очков', callback_data='glass')
@@ -128,12 +130,15 @@ def starart_bot(message):
     markup.add(button_clown, button_glass, button_pig, button_chicken)
     bot.send_message(message.chat.id, first_message, parse_mode='html', reply_markup=markup)
 
+
 # Callback query handler
 @bot.callback_query_handler(func=lambda call: True)
 def handle_query(call):
     mask_type = call.data
     apply_mask_to_video(mask_type)
-    bot.send_message(call.message.chat.id, f'Отправьте мне видео, и я добавлю маску {mask_type} и отправлю его вам обратно.')
+    bot.send_message(call.message.chat.id,
+                     f'Отправьте мне видео, и я добавлю маску {mask_type} и отправлю его вам обратно.')
+
 
 # Video message handler
 @bot.message_handler(content_types=['video'])
@@ -153,6 +158,7 @@ def handle_video(message):
         bot.send_video(message.chat.id, f, caption='Отправляю готовое видео обратно')
 
     os.remove('output.mp4')
+
 
 # Start polling
 bot.polling()
